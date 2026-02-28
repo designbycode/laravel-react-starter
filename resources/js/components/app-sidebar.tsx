@@ -6,6 +6,8 @@ import {
     Gauge,
     LayoutGrid,
     Shield,
+    User,
+    Users,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
@@ -99,8 +101,8 @@ export function AppSidebar() {
                                                 href={dashboard()}
                                                 className="gap-2"
                                             >
-                                                <LayoutGrid className="size-4" />
-                                                <span>Dashboard</span>
+                                                <User className="size-4" />
+                                                <span>User</span>
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
@@ -111,7 +113,7 @@ export function AppSidebar() {
                                                 className="gap-2"
                                             >
                                                 <Shield className="size-4" />
-                                                <span>Admin Panel</span>
+                                                <span>Administrator</span>
                                             </Link>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -137,6 +139,11 @@ export function AppSidebar() {
                                       title: 'Dashboard',
                                       href: '/admin/dashboard',
                                       icon: Gauge,
+                                  },
+                                  {
+                                      title: 'Users',
+                                      href: '/admin/users',
+                                      icon: Users,
                                   },
                               ]
                             : mainNavItemsBase

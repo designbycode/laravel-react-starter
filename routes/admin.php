@@ -1,17 +1,24 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardAdminController;
+use App\Http\Controllers\Admin\UserAdminController;
 use Illuminate\Support\Facades\Route;
+
 /*
 |--------------------------------------------------------------------------
 | Admin Routes
 |--------------------------------------------------------------------------
 */
 
-use Inertia\Inertia;
-
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admin.')->group(function () {
-    // Gate/role check can be done in policies or middleware; keeping simple here
-    Route::get('/dashboard', function () {
-        return Inertia::render('admin/dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', DashboardAdminController::class)->name('dashboard');
+
+    Route::resource('users', UserAdminController::class);
+    Route::post('users/{user}/restore', [UserAdminController::class, 'restore'])->name('users.restore');
+    Route::post('users/{user}/ban', [UserAdminController::class, 'ban'])->name('users.ban');
+    Route::post('users/{user}/unban', [UserAdminController::class, 'unban'])->name('users.unban');
+    Route::post('users/{user}/assign-role', [UserAdminController::class, 'assignRole'])->name('users.assign-role');
+    Route::post('users/{user}/remove-role', [UserAdminController::class, 'removeRole'])->name('users.remove-role');
+    Route::post('users/bulk', [UserAdminController::class, 'bulk'])->name('users.bulk');
+    Route::post('users/{user}/impersonate', [UserAdminController::class, 'impersonate'])->name('users.impersonate');
 });

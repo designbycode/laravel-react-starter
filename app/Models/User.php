@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Lab404\Impersonate\Models\Impersonate as ImpersonateTrait;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
@@ -29,7 +30,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
     ];
 
     /** @use HasFactory<\\Database\\Factories\\UserFactory> */
-    use HasFactory, HasRoles, InteractsWithMedia, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
+    use HasFactory, HasRoles, ImpersonateTrait, InteractsWithMedia, Notifiable, SoftDeletes, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -41,6 +42,7 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
         'name',
         'email',
         'password',
+        'email_verified_at',
     ];
 
     /**
@@ -117,6 +119,10 @@ class User extends Authenticatable implements HasMedia, MustVerifyEmail
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'uuid' => 'string',
+            'is_banned' => 'boolean',
+            'banned_at' => 'datetime',
+            'banned_until' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
     }
 }
