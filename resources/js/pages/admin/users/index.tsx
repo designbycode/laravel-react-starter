@@ -370,7 +370,11 @@ export default function AdminUsersIndex({
                                     {can?.delete && u.deleted_at && (
                                         <DropdownMenuItem
                                             onClick={() =>
-                                                router.post(restore(u.uuid))
+                                                router.post(
+                                                    restore(u.uuid),
+                                                    {},
+                                                    { preserveScroll: true },
+                                                )
                                             }
                                         >
                                             <RotateCcw className="mr-2 h-4 w-4" />
@@ -937,12 +941,14 @@ export default function AdminUsersIndex({
                             <PaginationItem>
                                 <PaginationLink
                                     aria-label="First"
-                                    href={usersIndex({
-                                        mergeQuery: {
-                                            ...normalize(localFilters),
-                                            page: 1,
-                                        },
-                                    })}
+                                    href={
+                                        usersIndex({
+                                            mergeQuery: {
+                                                ...normalize(localFilters),
+                                                page: 1,
+                                            },
+                                        }).url
+                                    }
                                     onClick={(e) => {
                                         e.preventDefault();
                                         setLocalFilters((f) => ({
@@ -958,15 +964,18 @@ export default function AdminUsersIndex({
                             </PaginationItem>
                             <PaginationItem>
                                 <PaginationPrevious
-                                    href={usersIndex({
-                                        mergeQuery: {
-                                            ...normalize(localFilters),
-                                            page: Math.max(
-                                                1,
-                                                (users?.current_page ?? 1) - 1,
-                                            ),
-                                        },
-                                    })}
+                                    href={
+                                        usersIndex({
+                                            mergeQuery: {
+                                                ...normalize(localFilters),
+                                                page: Math.max(
+                                                    1,
+                                                    (users?.current_page ?? 1) -
+                                                        1,
+                                                ),
+                                            },
+                                        }).url
+                                    }
                                     onClick={(e) => {
                                         e.preventDefault();
                                         const page = Math.max(
@@ -1003,14 +1012,16 @@ export default function AdminUsersIndex({
                                         <PaginationItem key={page}>
                                             <PaginationLink
                                                 isActive={page === current}
-                                                href={usersIndex({
-                                                    mergeQuery: {
-                                                        ...normalize(
-                                                            localFilters,
-                                                        ),
-                                                        page,
-                                                    },
-                                                })}
+                                                href={
+                                                    usersIndex({
+                                                        mergeQuery: {
+                                                            ...normalize(
+                                                                localFilters,
+                                                            ),
+                                                            page,
+                                                        },
+                                                    }).url
+                                                }
                                                 onClick={(e) => {
                                                     e.preventDefault();
                                                     setLocalFilters((f) => ({
@@ -1036,15 +1047,18 @@ export default function AdminUsersIndex({
                             })()}
                             <PaginationItem>
                                 <PaginationNext
-                                    href={usersIndex({
-                                        mergeQuery: {
-                                            ...normalize(localFilters),
-                                            page: Math.min(
-                                                users?.last_page ?? 1,
-                                                (users?.current_page ?? 1) + 1,
-                                            ),
-                                        },
-                                    })}
+                                    href={
+                                        usersIndex({
+                                            mergeQuery: {
+                                                ...normalize(localFilters),
+                                                page: Math.min(
+                                                    users?.last_page ?? 1,
+                                                    (users?.current_page ?? 1) +
+                                                        1,
+                                                ),
+                                            },
+                                        }).url
+                                    }
                                     onClick={(e) => {
                                         e.preventDefault();
                                         const last = users?.last_page ?? 1;
@@ -1066,12 +1080,14 @@ export default function AdminUsersIndex({
                             <PaginationItem>
                                 <PaginationLink
                                     aria-label="Last"
-                                    href={usersIndex({
-                                        mergeQuery: {
-                                            ...normalize(localFilters),
-                                            page: users?.last_page ?? 1,
-                                        },
-                                    })}
+                                    href={
+                                        usersIndex({
+                                            mergeQuery: {
+                                                ...normalize(localFilters),
+                                                page: users?.last_page ?? 1,
+                                            },
+                                        }).url
+                                    }
                                     onClick={(e) => {
                                         e.preventDefault();
                                         const page = users?.last_page ?? 1;

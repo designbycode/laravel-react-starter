@@ -69,8 +69,13 @@ export default function AdminUsersEdit({
                 />
                 <form onSubmit={submit} className="max-w-2xl space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium">Avatar</label>
-                        <AvatarUploader currentAvatarUrl={user.avatar_url || user.avatar} userName={user.name} />
+                        <label className="mb-2 text-sm font-medium">
+                            Avatar
+                        </label>
+                        <AvatarUploader
+                            currentAvatarUrl={user.avatar_url || user.avatar}
+                            userName={user.name}
+                        />
                     </div>
 
                     <div className="space-y-2">
@@ -159,7 +164,6 @@ export default function AdminUsersEdit({
                             </div>
                         )}
                     </div>
-
 
                     <div className="flex justify-end gap-2">
                         <Button type="submit" disabled={form.processing}>
