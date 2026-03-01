@@ -6,9 +6,18 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import {
+    ArrowUpDown,
     ChevronsLeft,
     ChevronsRight,
     MoreVertical,
+    Eye,
+    Pencil,
+    Trash2,
+    RotateCcw,
+    Ban,
+    ShieldCheck,
+    UserCog,
+    UserPlus, // used as impersonate icon fallback
     Search,
     X,
 } from 'lucide-react';
@@ -41,6 +50,7 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from '@/components/ui/pagination';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Select,
     SelectContent,
@@ -51,8 +61,6 @@ import {
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
-// Wayfinder route helper for impersonate not generated; fallback to literal POST path
-const impersonate = (uuid: string) => `/admin/users/${uuid}/impersonate`;
 import {
     assignRole,
     ban as banRoute,
@@ -66,12 +74,16 @@ import {
     unban,
 } from '@/routes/admin/users';
 import type { BreadcrumbItem } from '@/types';
+// Wayfinder route helper for impersonate not generated; fallback to literal POST path
+const impersonate = (uuid: string) => `/admin/users/${uuid}/impersonate`;
 
 type User = {
     id: number;
     uuid: string;
     name: string;
     email: string;
+    avatar?: string | null;
+    avatar_url?: string | null;
     roles?: { name: string }[];
     email_verified_at?: string | null;
     is_banned?: boolean;
@@ -96,6 +108,8 @@ export default function AdminUsersIndex({
         email_verified: filters?.email_verified ?? '',
         page: filters?.page ?? 1,
         per_page: filters?.per_page ?? 25,
+        sort: filters?.sort ?? '',
+        direction: filters?.direction ?? 'asc',
     });
 
     const data = React.useMemo(() => users?.data ?? [], [users?.data]);
@@ -118,45 +132,142 @@ export default function AdminUsersIndex({
             {
                 id: 'select',
                 header: () => (
-                    <Checkbox
-                        checked={
-                            Object.keys(rowSelection).length === data.length &&
-                            data.length > 0
-                        }
-                        onCheckedChange={(checked) => {
-                            const next: Record<string, boolean> = {};
-                            if (checked) {
-                                for (const u of data) next[u.id] = true;
+                    <div className="w-px">
+                        <Checkbox
+                            checked={
+                                Object.keys(rowSelection).length ===
+                                    data.length && data.length > 0
                             }
-                            setRowSelection(next);
-                        }}
-                    />
+                            onCheckedChange={(checked) => {
+                                const next: Record<string, boolean> = {};
+                                if (checked) {
+                                    for (const u of data) next[u.id] = true;
+                                }
+                                setRowSelection(next);
+                            }}
+                        />
+                    </div>
                 ),
                 cell: ({ row }) => (
-                    <Checkbox
-                        checked={rowSelection[(row.original as User).id]}
-                        onCheckedChange={(c) => {
-                            const id = (row.original as User).id;
-                            setRowSelection((s) => ({ ...s, [id]: !!c }));
-                        }}
-                    />
+                    <div className="w-px">
+                        <Checkbox
+                            checked={rowSelection[(row.original as User).id]}
+                            onCheckedChange={(c) => {
+                                const id = (row.original as User).id;
+                                setRowSelection((s) => ({ ...s, [id]: !!c }));
+                            }}
+                        />
+                    </div>
                 ),
                 size: 32,
             },
-            { accessorKey: 'name', header: 'Name' },
-            { accessorKey: 'email', header: 'Email' },
+            {
+                id: 'user',
+                header: () => (
+                    <div className="flex items-center gap-1">
+                        <span>User</span>
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            aria-label="Sort by user"
+                            onClick={() => {
+                                setLocalFilters((f) => ({
+                                    ...f,
+                                    sort: 'name',
+                                    direction:
+                                        f.direction === 'asc' ? 'desc' : 'asc',
+                                    page: 1,
+                                }));
+                                submitFilters();
+                            }}
+                        >
+                            <ArrowUpDown className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ),
+                cell: ({ row }) => {
+                    const u = row.original as User;
+                    const url = u.avatar_url || u.avatar || undefined;
+                    const initials = (u.name || '?')
+                        .split(' ')
+                        .map((p) => p[0] || '')
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase();
+
+                    return (
+                        <div className="flex items-center gap-3">
+                            <Avatar>
+                                <AvatarImage src={url} alt={u.name} />
+                                <AvatarFallback>{initials}</AvatarFallback>
+                            </Avatar>
+                            <div className="leading-tight">
+                                <div className="font-medium">{u.name}</div>
+                            </div>
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'email',
+                header: () => (
+                    <div className="flex items-center gap-1">
+                        <span>Email</span>
+                        <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            aria-label="Sort by email"
+                            onClick={() => {
+                                setLocalFilters((f) => ({
+                                    ...f,
+                                    sort: 'email',
+                                    direction:
+                                        f.direction === 'asc' ? 'desc' : 'asc',
+                                    page: 1,
+                                }));
+                                submitFilters();
+                            }}
+                        >
+                            <ArrowUpDown className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ),
+            },
             {
                 accessorKey: 'roles',
                 header: 'Roles',
-                cell: ({ row }) =>
-                    (row.original.roles || []).map((r) => r.name).join(', '),
+                cell: ({ row }) => {
+                    const roles = (row.original.roles || []) as { name: string }[];
+                    const roleVariant = (n: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+                        const name = n.toLowerCase();
+                        if (name === 'admin' || name === 'owner' || name === 'superadmin') return 'destructive';
+                        if (name === 'manager' || name === 'maintainer') return 'default';
+                        if (name === 'editor' || name === 'moderator') return 'secondary';
+                        return 'outline';
+                    };
+                    return (
+                        <div className="flex flex-wrap gap-1">
+                            {roles.length === 0 ? (
+                                <Badge variant="outline">none</Badge>
+                            ) : (
+                                roles.map((r) => (
+                                    <Badge key={r.name} variant={roleVariant(r.name)} className="capitalize">
+                                        {r.name}
+                                    </Badge>
+                                ))
+                            )}
+                        </div>
+                    );
+                },
             },
             {
                 id: 'verified',
                 header: 'Verified',
                 cell: ({ row }) =>
                     row.original.email_verified_at ? (
-                        <Badge variant="default">Verified</Badge>
+                        <Badge className="bg-emerald-500 text-emerald-50 border-transparent">Verified</Badge>
                     ) : (
                         <Badge variant="secondary">Unverified</Badge>
                     ),
@@ -177,11 +288,11 @@ export default function AdminUsersIndex({
             },
             {
                 id: 'actions',
-                header: 'Actions',
+                header: () => <span className="sr-only">Actions</span>,
                 cell: ({ row }) => {
                     const u = row.original as User;
                     return (
-                        <div className="flex justify-end">
+                        <div className="flex min-w-0 justify-end">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
@@ -196,35 +307,25 @@ export default function AdminUsersIndex({
                                     align="end"
                                     className="min-w-44"
                                 >
-                                    <DropdownMenuItem
-                                        onClick={() => router.get(show(u.uuid))}
-                                    >
+                                    <DropdownMenuItem onClick={() => router.get(show(u.uuid))}>
+                                        <Eye className="mr-2 h-4 w-4" />
                                         View
                                     </DropdownMenuItem>
                                     {can?.edit && (
-                                        <DropdownMenuItem
-                                            onClick={() =>
-                                                router.get(edit(u.uuid))
-                                            }
-                                        >
+                                        <DropdownMenuItem onClick={() => router.get(edit(u.uuid))}>
+                                            <Pencil className="mr-2 h-4 w-4" />
                                             Edit
                                         </DropdownMenuItem>
                                     )}
                                     {can?.delete && !u.deleted_at && (
-                                        <DropdownMenuItem
-                                            onClick={() =>
-                                                setConfirmDeleteUser(u)
-                                            }
-                                        >
+                                        <DropdownMenuItem onClick={() => setConfirmDeleteUser(u)}>
+                                            <Trash2 className="mr-2 h-4 w-4" />
                                             Delete…
                                         </DropdownMenuItem>
                                     )}
                                     {can?.delete && u.deleted_at && (
-                                        <DropdownMenuItem
-                                            onClick={() =>
-                                                router.post(restore(u.uuid))
-                                            }
-                                        >
+                                        <DropdownMenuItem onClick={() => router.post(restore(u.uuid))}>
+                                            <RotateCcw className="mr-2 h-4 w-4" />
                                             Restore
                                         </DropdownMenuItem>
                                     )}
@@ -239,17 +340,13 @@ export default function AdminUsersIndex({
                                                         setBanUntil('');
                                                     }}
                                                 >
+                                                    <Ban className="mr-2 h-4 w-4" />
                                                     Ban…
                                                 </DropdownMenuItem>
                                             )}
                                             {u.is_banned && can?.edit && (
-                                                <DropdownMenuItem
-                                                    onClick={() =>
-                                                        router.post(
-                                                            unban(u.uuid),
-                                                        )
-                                                    }
-                                                >
+                                                <DropdownMenuItem onClick={() => router.post(unban(u.uuid))}>
+                                                    <ShieldCheck className="mr-2 h-4 w-4" />
                                                     Unban
                                                 </DropdownMenuItem>
                                             )}
@@ -260,17 +357,13 @@ export default function AdminUsersIndex({
                                                         setRoleValue('');
                                                     }}
                                                 >
+                                                    <UserCog className="mr-2 h-4 w-4" />
                                                     Assign role…
                                                 </DropdownMenuItem>
                                             )}
                                             {can?.impersonate && (
-                                                <DropdownMenuItem
-                                                    onClick={() =>
-                                                        router.post(
-                                                            impersonate(u.uuid),
-                                                        )
-                                                    }
-                                                >
+                                                <DropdownMenuItem onClick={() => router.post(impersonate(u.uuid))}>
+                                                    <UserPlus className="mr-2 h-4 w-4" />
                                                     Impersonate
                                                 </DropdownMenuItem>
                                             )}
@@ -307,6 +400,8 @@ export default function AdminUsersIndex({
         status: f.status === 'any' ? '' : f.status,
         email_verified: f.email_verified === 'any' ? '' : f.email_verified,
         role: f.role === 'any' ? '' : f.role,
+        sort: f['sort'] || undefined,
+        direction: f['direction'] || undefined,
     });
 
     const clearFilter = (
@@ -340,6 +435,18 @@ export default function AdminUsersIndex({
         submitFilters();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [localFilters.per_page]);
+
+    React.useEffect(() => {
+        // Auto-submit when select-based filters or sort change
+        submitFilters();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        localFilters.role,
+        localFilters.status,
+        localFilters.email_verified,
+        localFilters.sort,
+        localFilters.direction,
+    ]);
 
     const bulk = (action: string, role?: string) => {
         if (selectedIds.length === 0) return;
@@ -407,6 +514,7 @@ export default function AdminUsersIndex({
                             className="h-9 w-72 pl-8"
                             placeholder="Search name or email"
                             value={localFilters.search}
+                            type={`search`}
                             onChange={(e) =>
                                 setLocalFilters((f) => ({
                                     ...f,
@@ -424,7 +532,7 @@ export default function AdminUsersIndex({
                                 setLocalFilters((f) => ({ ...f, role: v }))
                             }
                         >
-                            <SelectTrigger className="h-9 min-w-36">
+                            <SelectTrigger className="h-9 min-w-32">
                                 <SelectValue placeholder="Role" />
                             </SelectTrigger>
                             <SelectContent>
@@ -450,7 +558,7 @@ export default function AdminUsersIndex({
                                 setLocalFilters((f) => ({ ...f, status: v }))
                             }
                         >
-                            <SelectTrigger className="h-9 min-w-36">
+                            <SelectTrigger className="h-9 min-w-32">
                                 <SelectValue placeholder="Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -473,7 +581,7 @@ export default function AdminUsersIndex({
                                 }))
                             }
                         >
-                            <SelectTrigger className="h-9 min-w-36">
+                            <SelectTrigger className="h-9 min-w-32">
                                 <SelectValue placeholder="Verified" />
                             </SelectTrigger>
                             <SelectContent>
@@ -486,7 +594,7 @@ export default function AdminUsersIndex({
 
                     {/* Reset button moved next to Verified */}
                     <Button
-                        className="ml-2 h-9"
+                        className="ml-0 h-9"
                         type="button"
                         variant="secondary"
                         onClick={() => {
@@ -497,11 +605,14 @@ export default function AdminUsersIndex({
                                 email_verified: '',
                                 page: 1,
                                 per_page: 25,
+                                sort: '',
+                                direction: 'asc',
                             });
                             submitFilters();
                         }}
                     >
-                        Reset
+                        <X className={`size-4`} />
+                        <span className={`sr-only`}>Reset</span>
                     </Button>
 
                     {/* Spacer */}

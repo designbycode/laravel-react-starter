@@ -13,7 +13,9 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::middleware(['auth', 'verified'])->prefix('admin')->as('admin.')->group(function () {
-    Route::post('/impersonate/stop', [ImpersonationController::class, 'stop'])->name('impersonate.stop');
+    Route::post('/impersonate/stop', [ImpersonationController::class, 'stop'])
+        ->name('impersonate.stop')
+        ->withoutMiddleware([\App\Http\Middleware\EnsureUserHasRole::class, \App\Http\Middleware\EnsureUserHasPermission::class]);
 });
 
 Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admin.')->group(function () {

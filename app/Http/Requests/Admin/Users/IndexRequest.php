@@ -28,6 +28,8 @@ class IndexRequest extends FormRequest
             'role' => ['sometimes', 'nullable', 'string', 'exists:roles,name'],
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'sort' => ['sometimes', 'nullable', 'string', 'in:name,email,created_at'],
+            'direction' => ['sometimes', 'nullable', 'string', 'in:asc,desc'],
         ];
     }
 }

@@ -48,7 +48,17 @@ class UserService
             $query->role($role);
         }
 
-        return $query->orderByDesc('id');
+        // Sorting
+        $sort = $filters['sort'] ?? null;
+        $dir = $filters['direction'] ?? null;
+        $direction = in_array($dir, ['asc', 'desc'], true) ? $dir : 'asc';
+        if (in_array($sort, ['name', 'email', 'created_at'], true)) {
+            $query->orderBy($sort, $direction);
+        } else {
+            $query->orderByDesc('id');
+        }
+
+        return $query;
     }
 
     public function create(array $data): User

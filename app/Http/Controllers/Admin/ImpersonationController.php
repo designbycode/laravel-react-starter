@@ -27,7 +27,7 @@ class ImpersonationController extends Controller
         session(['impersonate_original_user' => $originalUser->uuid]);
 
         // Login as the target user
-        Auth::login($user);
+        $originalUser->impersonate($user);
 
         activity()
             ->performedOn($user)
@@ -60,7 +60,7 @@ class ImpersonationController extends Controller
             ->log('Stopped impersonating user');
 
         // Login back as the original user
-        Auth::login($originalUser);
+        Auth::user()->leaveImpersonation();
 
         return redirect()->route('admin.users.index')->with('success', 'Stopped impersonating.');
     }
