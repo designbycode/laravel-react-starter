@@ -36,14 +36,35 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'flash' => fn () => [
+                'type' => session('flash.type'),
+                'message' => session('flash.message'),
+            ],
             'auth' => [
                 'user' => $user?->load('roles'),
                 'permissions' => $user?->getAllPermissions()->pluck('name') ?? collect(),
+                'impersonating' => (bool) (
+                    ($user && method_exists($user, 'isImpersonated') && $user->isImpersonated()) ||
+                    ($user && method_exists($user, 'isImpersonating') && $user->isImpersonating()) ||
+                    session()->has('impersonated_by') ||
+                    session()->has('impersonator_id') ||
+                    session()->has('impersonate') ||
+                    session()->has('impersonate_original_user')
+                ),
+                // compatibility alias if other parts of UI check this
+                'is_impersonating' => (bool) (
+                    ($user && method_exists($user, 'isImpersonated') && $user->isImpersonated()) ||
+                    ($user && method_exists($user, 'isImpersonating') && $user->isImpersonating()) ||
+                    session()->has('impersonated_by') ||
+                    session()->has('impersonator_id') ||
+                    session()->has('impersonate') ||
+                    session()->has('impersonate_original_user')
+                ),
             ],
-            
         ];
     }
 }

@@ -178,4 +178,20 @@ class UserAdminController extends Controller
 
         return redirect()->route('dashboard');
     }
+
+    public function stopImpersonating()
+    {
+        if (auth()->check() && method_exists(auth()->user(), 'leaveImpersonation')) {
+            auth()->user()->leaveImpersonation();
+        } else {
+            // Fallback: clear common impersonation session flags and restore original user if stored
+            foreach (['impersonator_id', 'impersonated_by', 'impersonate'] as $key) {
+                if (session()->has($key)) {
+                    session()->forget($key);
+                }
+            }
+        }
+
+        return redirect()->route('dashboard')->with('flash', ['type' => 'success', 'message' => 'Stopped impersonating']);
+    }
 }

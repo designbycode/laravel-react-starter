@@ -31,9 +31,9 @@ export function usePermissions() {
         return hasRole('moderator');
     };
 
-    // const isImpersonating = (): boolean => {
-    //     return auth.is_impersonating ?? false;
-    // };
+    const isImpersonating = (): boolean => {
+        return auth.is_impersonating ?? false;
+    };
 
     return {
         hasPermission,
@@ -43,6 +43,6 @@ export function usePermissions() {
         hasAnyRole,
         isAdmin,
         isModerator,
-        // isImpersonating,
+        isImpersonating,
     };
 }

@@ -51,6 +51,8 @@ import {
 import Wrapper from '@/components/wrapper';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
+// Wayfinder route helper for impersonate not generated; fallback to literal POST path
+const impersonate = (uuid: string) => `/admin/users/${uuid}/impersonate`;
 import {
     assignRole,
     ban as banRoute,
@@ -58,7 +60,6 @@ import {
     create,
     destroy,
     edit,
-    impersonate,
     index as usersIndex,
     restore,
     show,
@@ -403,7 +404,7 @@ export default function AdminUsersIndex({
                     <div className="relative">
                         <Search className="pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
-                            className="h-9 w-64 pl-8"
+                            className="h-9 w-72 pl-8"
                             placeholder="Search name or email"
                             value={localFilters.search}
                             onChange={(e) =>
@@ -429,7 +430,11 @@ export default function AdminUsersIndex({
                             <SelectContent>
                                 <SelectItem value="any">Any role</SelectItem>
                                 {roles.map((r) => (
-                                    <SelectItem key={r} value={r}>
+                                    <SelectItem
+                                        className={`capitalize`}
+                                        key={r}
+                                        value={r}
+                                    >
                                         {r}
                                     </SelectItem>
                                 ))}
@@ -479,6 +484,26 @@ export default function AdminUsersIndex({
                         </Select>
                     </div>
 
+                    {/* Reset button moved next to Verified */}
+                    <Button
+                        className="ml-2 h-9"
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                            setLocalFilters({
+                                search: '',
+                                role: '',
+                                status: '',
+                                email_verified: '',
+                                page: 1,
+                                per_page: 25,
+                            });
+                            submitFilters();
+                        }}
+                    >
+                        Reset
+                    </Button>
+
                     {/* Spacer */}
                     <div className="grow" />
 
@@ -505,37 +530,7 @@ export default function AdminUsersIndex({
                         </Select>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                        <Button
-                            className="h-9"
-                            onClick={() => {
-                                setLocalFilters((f) => ({ ...f, page: 1 }));
-                                submitFilters();
-                            }}
-                            type="button"
-                        >
-                            Apply
-                        </Button>
-                        <Button
-                            className="h-9"
-                            type="button"
-                            variant="secondary"
-                            onClick={() => {
-                                setLocalFilters({
-                                    search: '',
-                                    role: '',
-                                    status: '',
-                                    email_verified: '',
-                                    page: 1,
-                                    per_page: 25,
-                                });
-                                submitFilters();
-                            }}
-                        >
-                            Reset
-                        </Button>
-                    </div>
+                    {/* Actions removed - Apply/Reset not needed here */}
                 </div>
 
                 {/* Active filters */}
@@ -653,18 +648,37 @@ export default function AdminUsersIndex({
                                     </DialogTitle>
                                 </DialogHeader>
                                 <div className="flex gap-2">
-                                    <Input
-                                        placeholder="Role name"
-                                        value={roleValue}
-                                        onChange={(e) =>
-                                            setRoleValue(e.target.value)
+                                    <Select
+                                        value={roleValue || 'any'}
+                                        onValueChange={(v) =>
+                                            setRoleValue(v === 'any' ? '' : v)
                                         }
-                                    />
+                                    >
+                                        <SelectTrigger className="min-w-48">
+                                            <SelectValue placeholder="Choose a role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="any">
+                                                Choose a role
+                                            </SelectItem>
+                                            {roles.map((r) => (
+                                                <SelectItem
+                                                    className={`capitalize`}
+                                                    key={r}
+                                                    value={r}
+                                                >
+                                                    {r}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                     <Button
                                         onClick={() => {
+                                            if (!roleValue) return;
                                             bulk('assign-role', roleValue);
                                             setRoleValue('');
                                         }}
+                                        disabled={!roleValue}
                                     >
                                         Assign
                                     </Button>
@@ -1002,11 +1016,30 @@ export default function AdminUsersIndex({
                         </DialogTitle>
                     </DialogHeader>
                     <div className="flex gap-2">
-                        <Input
-                            placeholder="Role name"
-                            value={roleValue}
-                            onChange={(e) => setRoleValue(e.target.value)}
-                        />
+                        <Select
+                            value={roleValue || 'any'}
+                            onValueChange={(v) =>
+                                setRoleValue(v === 'any' ? '' : v)
+                            }
+                        >
+                            <SelectTrigger className="min-w-48">
+                                <SelectValue placeholder="Choose a role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="any">
+                                    Choose a role
+                                </SelectItem>
+                                {roles.map((r) => (
+                                    <SelectItem
+                                        className={`capitalize`}
+                                        key={r}
+                                        value={r}
+                                    >
+                                        {r}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <Button onClick={doAssignRole} disabled={!roleValue}>
                             Assign
                         </Button>

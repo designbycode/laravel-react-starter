@@ -1,4 +1,5 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, usePage, router } from '@inertiajs/react';
+import * as React from 'react';
 import { BookOpen, Folder, LayoutGrid, Menu, Search } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import AppLogoIcon from '@/components/app-logo-icon';
@@ -67,7 +68,7 @@ const activeItemStyles =
 
 export function AppHeader({ breadcrumbs = [] }: Props) {
     const page = usePage();
-    const { auth } = page.props as { auth: Auth };
+    const { auth, flash } = page.props as { auth: Auth; flash?: { type?: string; message?: string } };
     const getInitials = useInitials();
     const { isCurrentUrl, whenCurrentUrl } = useCurrentUrl();
     const [cacheBuster, setCacheBuster] = useState<number>(Date.now());
@@ -80,8 +81,36 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
             ? `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}v=${cacheBuster}`
             : undefined;
     }, [baseUrl, cacheBuster]);
+    // trigger toast for flash messages
+    React.useEffect(() => {
+        if (flash?.message) {
+            // lazy import to keep header light
+            import('sonner').then(({ toast }) => {
+                const kind = (flash?.type || 'info') as 'success' | 'info' | 'warning' | 'error';
+                toast[kind](flash.message);
+            });
+        }
+    }, [flash?.message, flash?.type]);
+
     return (
         <>
+            {auth.impersonating && (
+                <div className="bg-amber-500/10 border-b border-amber-500/30">
+                    <div className="mx-auto flex items-center justify-between gap-2 px-4 py-2 text-amber-900 md:max-w-7xl dark:text-amber-300">
+                        <div className="text-sm">
+                            You are impersonating {auth.user?.name}. Actions are recorded.
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => { window.location.href = '/admin/users/stop-impersonating'; }}
+                            className="border-amber-500 text-amber-900 hover:bg-amber-500/20 dark:text-amber-300"
+                        >
+                            Stop impersonating
+                        </Button>
+                    </div>
+                </div>
+            )}
             <div className="border-b border-sidebar-border/80">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                     {/* Mobile Menu */}

@@ -13,9 +13,11 @@ export type User = {
 };
 
 export type Auth = {
+    is_impersonating: boolean;
     permissions?: string[];
     roles?: Array<{ name: string }>;
     user: User;
+    impersonating?: boolean;
 };
 
 export type TwoFactorSetupData = {
