@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import Wrapper from '@/components/wrapper';
+import { AvatarUploader } from '@/components/avatar-uploader';
 
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
@@ -67,6 +68,11 @@ export default function AdminUsersEdit({
                     }
                 />
                 <form onSubmit={submit} className="max-w-2xl space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">Avatar</label>
+                        <AvatarUploader currentAvatarUrl={user.avatar_url || user.avatar} userName={user.name} />
+                    </div>
+
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Name</label>
                         <Input

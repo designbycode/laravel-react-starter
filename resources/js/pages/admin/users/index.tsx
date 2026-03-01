@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 import Heading from '@/components/heading';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -50,7 +51,6 @@ import {
     PaginationNext,
     PaginationPrevious,
 } from '@/components/ui/pagination';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Select,
     SelectContent,
@@ -172,14 +172,23 @@ export default function AdminUsersIndex({
                             className="h-7 w-7"
                             aria-label="Sort by user"
                             onClick={() => {
-                                setLocalFilters((f) => ({
-                                    ...f,
-                                    sort: 'name',
-                                    direction:
-                                        f.direction === 'asc' ? 'desc' : 'asc',
-                                    page: 1,
-                                }));
-                                submitFilters();
+                                setLocalFilters((f) => {
+                                    const direction =
+                                        f.direction === 'asc' ? 'desc' : 'asc';
+                                    const next = {
+                                        ...f,
+                                        sort: 'name',
+                                        direction,
+                                        page: 1,
+                                    } as typeof f;
+                                    // Fire request immediately with the computed next state
+                                    submitFilters({
+                                        sort: 'name',
+                                        direction,
+                                        page: 1,
+                                    });
+                                    return next;
+                                });
                             }}
                         >
                             <ArrowUpDown className="h-4 w-4" />
@@ -220,14 +229,22 @@ export default function AdminUsersIndex({
                             className="h-7 w-7"
                             aria-label="Sort by email"
                             onClick={() => {
-                                setLocalFilters((f) => ({
-                                    ...f,
-                                    sort: 'email',
-                                    direction:
-                                        f.direction === 'asc' ? 'desc' : 'asc',
-                                    page: 1,
-                                }));
-                                submitFilters();
+                                setLocalFilters((f) => {
+                                    const direction =
+                                        f.direction === 'asc' ? 'desc' : 'asc';
+                                    const next = {
+                                        ...f,
+                                        sort: 'email',
+                                        direction,
+                                        page: 1,
+                                    } as typeof f;
+                                    submitFilters({
+                                        sort: 'email',
+                                        direction,
+                                        page: 1,
+                                    });
+                                    return next;
+                                });
                             }}
                         >
                             <ArrowUpDown className="h-4 w-4" />
@@ -464,13 +481,23 @@ export default function AdminUsersIndex({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [localFilters.search]);
 
-    const submitFilters = (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        router.get(
-            usersIndex({ mergeQuery: normalize(localFilters) }),
-            {},
-            { preserveState: true, preserveScroll: true },
-        );
+    const submitFilters = (
+        arg?: React.FormEvent | Partial<typeof localFilters>,
+    ) => {
+        let next: Partial<typeof localFilters> = {};
+        if (arg && 'preventDefault' in arg) {
+            (arg as React.FormEvent).preventDefault();
+        } else if (arg) {
+            next = arg as Partial<typeof localFilters>;
+        }
+        const params = normalize({
+            ...(localFilters as typeof localFilters),
+            ...next,
+        });
+        router.get(usersIndex(), params as Record<string, any>, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     React.useEffect(() => {
@@ -575,7 +602,11 @@ export default function AdminUsersIndex({
                         <Select
                             value={localFilters.role}
                             onValueChange={(v) =>
-                                setLocalFilters((f) => ({ ...f, role: v }))
+                                setLocalFilters((f) => ({
+                                    ...f,
+                                    role: v,
+                                    page: 1,
+                                }))
                             }
                         >
                             <SelectTrigger className="h-9 min-w-32">
@@ -601,7 +632,11 @@ export default function AdminUsersIndex({
                         <Select
                             value={localFilters.status}
                             onValueChange={(v) =>
-                                setLocalFilters((f) => ({ ...f, status: v }))
+                                setLocalFilters((f) => ({
+                                    ...f,
+                                    status: v,
+                                    page: 1,
+                                }))
                             }
                         >
                             <SelectTrigger className="h-9 min-w-32">
@@ -624,6 +659,7 @@ export default function AdminUsersIndex({
                                 setLocalFilters((f) => ({
                                     ...f,
                                     email_verified: v,
+                                    page: 1,
                                 }))
                             }
                         >
@@ -644,7 +680,7 @@ export default function AdminUsersIndex({
                         type="button"
                         variant="secondary"
                         onClick={() => {
-                            setLocalFilters({
+                            const reset = {
                                 search: '',
                                 role: '',
                                 status: '',
@@ -653,8 +689,9 @@ export default function AdminUsersIndex({
                                 per_page: 25,
                                 sort: '',
                                 direction: 'asc',
-                            });
-                            submitFilters();
+                            } as typeof localFilters;
+                            setLocalFilters(reset);
+                            submitFilters(reset);
                         }}
                     >
                         <X className={`size-4`} />
@@ -672,6 +709,7 @@ export default function AdminUsersIndex({
                                 setLocalFilters((f) => ({
                                     ...f,
                                     per_page: Number(v || 25),
+                                    page: 1,
                                 }))
                             }
                         >
@@ -899,18 +937,20 @@ export default function AdminUsersIndex({
                             <PaginationItem>
                                 <PaginationLink
                                     aria-label="First"
-                                    onClick={() =>
-                                        router.get(
-                                            usersIndex({
-                                                mergeQuery: {
-                                                    ...normalize(localFilters),
-                                                    page: 1,
-                                                },
-                                            }),
-                                            {},
-                                            { preserveState: true },
-                                        )
-                                    }
+                                    href={usersIndex({
+                                        mergeQuery: {
+                                            ...normalize(localFilters),
+                                            page: 1,
+                                        },
+                                    })}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        setLocalFilters((f) => ({
+                                            ...f,
+                                            page: 1,
+                                        }));
+                                        submitFilters({ page: 1 });
+                                    }}
                                     data-disabled={users?.current_page <= 1}
                                 >
                                     <ChevronsLeft className={`text-lg`} />
@@ -918,19 +958,27 @@ export default function AdminUsersIndex({
                             </PaginationItem>
                             <PaginationItem>
                                 <PaginationPrevious
-                                    onClick={() =>
-                                        router.get(
-                                            usersIndex({
-                                                mergeQuery: {
-                                                    ...normalize(localFilters),
-                                                    page:
-                                                        users.current_page - 1,
-                                                },
-                                            }),
-                                            {},
-                                            { preserveState: true },
-                                        )
-                                    }
+                                    href={usersIndex({
+                                        mergeQuery: {
+                                            ...normalize(localFilters),
+                                            page: Math.max(
+                                                1,
+                                                (users?.current_page ?? 1) - 1,
+                                            ),
+                                        },
+                                    })}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        const page = Math.max(
+                                            1,
+                                            (users?.current_page ?? 1) - 1,
+                                        );
+                                        setLocalFilters((f) => ({
+                                            ...f,
+                                            page,
+                                        }));
+                                        submitFilters({ page });
+                                    }}
                                     data-disabled={users?.current_page <= 1}
                                 />
                             </PaginationItem>
@@ -955,20 +1003,22 @@ export default function AdminUsersIndex({
                                         <PaginationItem key={page}>
                                             <PaginationLink
                                                 isActive={page === current}
-                                                onClick={() =>
-                                                    router.get(
-                                                        usersIndex({
-                                                            mergeQuery: {
-                                                                ...normalize(
-                                                                    localFilters,
-                                                                ),
-                                                                page,
-                                                            },
-                                                        }),
-                                                        {},
-                                                        { preserveState: true },
-                                                    )
-                                                }
+                                                href={usersIndex({
+                                                    mergeQuery: {
+                                                        ...normalize(
+                                                            localFilters,
+                                                        ),
+                                                        page,
+                                                    },
+                                                })}
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    setLocalFilters((f) => ({
+                                                        ...f,
+                                                        page,
+                                                    }));
+                                                    submitFilters({ page });
+                                                }}
                                             >
                                                 {page}
                                             </PaginationLink>
@@ -986,19 +1036,28 @@ export default function AdminUsersIndex({
                             })()}
                             <PaginationItem>
                                 <PaginationNext
-                                    onClick={() =>
-                                        router.get(
-                                            usersIndex({
-                                                mergeQuery: {
-                                                    ...normalize(localFilters),
-                                                    page:
-                                                        users.current_page + 1,
-                                                },
-                                            }),
-                                            {},
-                                            { preserveState: true },
-                                        )
-                                    }
+                                    href={usersIndex({
+                                        mergeQuery: {
+                                            ...normalize(localFilters),
+                                            page: Math.min(
+                                                users?.last_page ?? 1,
+                                                (users?.current_page ?? 1) + 1,
+                                            ),
+                                        },
+                                    })}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        const last = users?.last_page ?? 1;
+                                        const page = Math.min(
+                                            last,
+                                            (users?.current_page ?? 1) + 1,
+                                        );
+                                        setLocalFilters((f) => ({
+                                            ...f,
+                                            page,
+                                        }));
+                                        submitFilters({ page });
+                                    }}
                                     data-disabled={
                                         users?.current_page >= users?.last_page
                                     }
@@ -1007,18 +1066,21 @@ export default function AdminUsersIndex({
                             <PaginationItem>
                                 <PaginationLink
                                     aria-label="Last"
-                                    onClick={() =>
-                                        router.get(
-                                            usersIndex({
-                                                mergeQuery: {
-                                                    ...normalize(localFilters),
-                                                    page: users.last_page,
-                                                },
-                                            }),
-                                            {},
-                                            { preserveState: true },
-                                        )
-                                    }
+                                    href={usersIndex({
+                                        mergeQuery: {
+                                            ...normalize(localFilters),
+                                            page: users?.last_page ?? 1,
+                                        },
+                                    })}
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        const page = users?.last_page ?? 1;
+                                        setLocalFilters((f) => ({
+                                            ...f,
+                                            page,
+                                        }));
+                                        submitFilters({ page });
+                                    }}
                                     data-disabled={
                                         users?.current_page >= users?.last_page
                                     }
