@@ -6,7 +6,7 @@ export default function Heading({
     variant = 'default',
     action,
 }: {
-    title: string;
+    title: ReactNode;
     description?: string;
     variant?: 'default' | 'small';
     action?: ReactNode;

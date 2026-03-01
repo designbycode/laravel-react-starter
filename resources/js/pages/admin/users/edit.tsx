@@ -1,15 +1,16 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes/admin';
-import { index as usersIndex } from '@/routes/admin/users';
+import { index as usersIndex, update } from '@/routes/admin/users';
+import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import Wrapper from '@/components/wrapper';
 
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { update } from '@/routes/admin/users';
 
 export default function AdminUsersEdit({
     user,
@@ -30,8 +31,6 @@ export default function AdminUsersEdit({
         password: '',
         email_verified: !!user.email_verified_at,
         roles: initialRoles,
-        ban: { reason: '', until: '' as string | undefined },
-        unban: false,
     });
 
     const toggleRole = (role: string, checked: boolean | string) => {
@@ -45,14 +44,28 @@ export default function AdminUsersEdit({
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        form.submit(update(user.uuid));
+        form.submit(update(user.uuid), {
+            onSuccess: () => toast.success('User saved'),
+            onError: () => toast.error('Could not save user'),
+        });
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit ${user.name}`} />
             <Wrapper>
-                <Heading title={`Edit ${user?.name ?? 'User'}`} description="Update user details, verification status, roles, or ban state." />
+                <Heading
+                    title={`Edit ${user?.name ?? 'User'}`}
+                    description="Update user details, verification status, roles, or ban state."
+                    action={
+                        <Link href={usersIndex()}>
+                            <Button size="sm" variant="secondary">
+                                <ArrowLeft className="mr-0 h-4 w-4" />
+                                Back
+                            </Button>
+                        </Link>
+                    }
+                />
                 <form onSubmit={submit} className="max-w-2xl space-y-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Name</label>
@@ -141,56 +154,6 @@ export default function AdminUsersEdit({
                         )}
                     </div>
 
-                    {user.is_banned ? (
-                        <div className="space-y-2 border-t pt-4">
-                            <label className="text-sm font-medium">
-                                Unban user
-                            </label>
-                            <div className="flex items-center gap-2">
-                                <Checkbox
-                                    checked={form.data.unban}
-                                    onCheckedChange={(c) =>
-                                        form.setData('unban', !!c)
-                                    }
-                                />
-                                <span className="text-sm">Unban on save</span>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="space-y-2 border-t pt-4">
-                            <label className="text-sm font-medium">
-                                Immediate Ban (optional)
-                            </label>
-                            <div className="space-y-2">
-                                <Input
-                                    placeholder="Reason"
-                                    value={form.data.ban.reason}
-                                    onChange={(e) =>
-                                        form.setData('ban', {
-                                            ...form.data.ban,
-                                            reason: e.target.value,
-                                        })
-                                    }
-                                />
-                                <Input
-                                    type="datetime-local"
-                                    placeholder="Until"
-                                    value={form.data.ban.until}
-                                    onChange={(e) =>
-                                        form.setData('ban', {
-                                            ...form.data.ban,
-                                            until: e.target.value,
-                                        })
-                                    }
-                                />
-                                {(form.errors as any)['ban.reason'] && (
-                                    <div className="text-sm text-red-500">
-                                        {(form.errors as any)['ban.reason']}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
 
                     <div className="flex justify-end gap-2">
                         <Button type="submit" disabled={form.processing}>

@@ -7,18 +7,18 @@ import {
 } from '@tanstack/react-table';
 import {
     ArrowUpDown,
+    Ban,
     ChevronsLeft,
     ChevronsRight,
-    MoreVertical,
     Eye,
+    MoreVertical,
     Pencil,
-    Trash2,
     RotateCcw,
-    Ban,
-    ShieldCheck,
-    UserCog,
-    UserPlus, // used as impersonate icon fallback
     Search,
+    ShieldCheck,
+    Trash2,
+    UserCog,
+    UserPlus,
     X,
 } from 'lucide-react';
 import * as React from 'react';
@@ -239,12 +239,23 @@ export default function AdminUsersIndex({
                 accessorKey: 'roles',
                 header: 'Roles',
                 cell: ({ row }) => {
-                    const roles = (row.original.roles || []) as { name: string }[];
-                    const roleVariant = (n: string): 'default' | 'secondary' | 'destructive' | 'outline' => {
+                    const roles = (row.original.roles || []) as {
+                        name: string;
+                    }[];
+                    const roleVariant = (
+                        n: string,
+                    ): 'default' | 'secondary' | 'destructive' | 'outline' => {
                         const name = n.toLowerCase();
-                        if (name === 'admin' || name === 'owner' || name === 'superadmin') return 'destructive';
-                        if (name === 'manager' || name === 'maintainer') return 'default';
-                        if (name === 'editor' || name === 'moderator') return 'secondary';
+                        if (
+                            name === 'admin' ||
+                            name === 'owner' ||
+                            name === 'superadmin'
+                        )
+                            return 'destructive';
+                        if (name === 'manager' || name === 'maintainer')
+                            return 'default';
+                        if (name === 'editor' || name === 'moderator')
+                            return 'secondary';
                         return 'outline';
                     };
                     return (
@@ -253,7 +264,11 @@ export default function AdminUsersIndex({
                                 <Badge variant="outline">none</Badge>
                             ) : (
                                 roles.map((r) => (
-                                    <Badge key={r.name} variant={roleVariant(r.name)} className="capitalize">
+                                    <Badge
+                                        key={r.name}
+                                        variant={roleVariant(r.name)}
+                                        className="capitalize"
+                                    >
                                         {r.name}
                                     </Badge>
                                 ))
@@ -267,7 +282,9 @@ export default function AdminUsersIndex({
                 header: 'Verified',
                 cell: ({ row }) =>
                     row.original.email_verified_at ? (
-                        <Badge className="bg-emerald-500 text-emerald-50 border-transparent">Verified</Badge>
+                        <Badge className="border-transparent bg-emerald-500 text-emerald-50">
+                            Verified
+                        </Badge>
                     ) : (
                         <Badge variant="secondary">Unverified</Badge>
                     ),
@@ -307,24 +324,38 @@ export default function AdminUsersIndex({
                                     align="end"
                                     className="min-w-44"
                                 >
-                                    <DropdownMenuItem onClick={() => router.get(show(u.uuid))}>
+                                    <DropdownMenuItem
+                                        onClick={() => router.get(show(u.uuid))}
+                                    >
                                         <Eye className="mr-2 h-4 w-4" />
                                         View
                                     </DropdownMenuItem>
                                     {can?.edit && (
-                                        <DropdownMenuItem onClick={() => router.get(edit(u.uuid))}>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                router.get(edit(u.uuid))
+                                            }
+                                        >
                                             <Pencil className="mr-2 h-4 w-4" />
                                             Edit
                                         </DropdownMenuItem>
                                     )}
                                     {can?.delete && !u.deleted_at && (
-                                        <DropdownMenuItem onClick={() => setConfirmDeleteUser(u)}>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                setConfirmDeleteUser(u)
+                                            }
+                                        >
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             Delete…
                                         </DropdownMenuItem>
                                     )}
                                     {can?.delete && u.deleted_at && (
-                                        <DropdownMenuItem onClick={() => router.post(restore(u.uuid))}>
+                                        <DropdownMenuItem
+                                            onClick={() =>
+                                                router.post(restore(u.uuid))
+                                            }
+                                        >
                                             <RotateCcw className="mr-2 h-4 w-4" />
                                             Restore
                                         </DropdownMenuItem>
@@ -345,7 +376,13 @@ export default function AdminUsersIndex({
                                                 </DropdownMenuItem>
                                             )}
                                             {u.is_banned && can?.edit && (
-                                                <DropdownMenuItem onClick={() => router.post(unban(u.uuid))}>
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        router.post(
+                                                            unban(u.uuid),
+                                                        )
+                                                    }
+                                                >
                                                     <ShieldCheck className="mr-2 h-4 w-4" />
                                                     Unban
                                                 </DropdownMenuItem>
@@ -362,7 +399,13 @@ export default function AdminUsersIndex({
                                                 </DropdownMenuItem>
                                             )}
                                             {can?.impersonate && (
-                                                <DropdownMenuItem onClick={() => router.post(impersonate(u.uuid))}>
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        router.post(
+                                                            impersonate(u.uuid),
+                                                        )
+                                                    }
+                                                >
                                                     <UserPlus className="mr-2 h-4 w-4" />
                                                     Impersonate
                                                 </DropdownMenuItem>
@@ -499,7 +542,10 @@ export default function AdminUsersIndex({
                     action={
                         can?.create ? (
                             <Link href={create()}>
-                                <Button size="sm">New</Button>
+                                <Button size="sm">
+                                    <UserPlus className="mr-0 h-4 w-4" />
+                                    Create User
+                                </Button>
                             </Link>
                         ) : null
                     }
