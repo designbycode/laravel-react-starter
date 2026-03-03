@@ -74,7 +74,12 @@ jobs:
           node-version: '22'
 
       - name: Setup Chrome
+        id: chrome
         uses: browser-actions/setup-chrome@v1
+
+      - name: Setup ChromeDriver
+        id: chromedriver
+        uses: browser-actions/setup-chromedriver@v1
 
       - name: Install Node Dependencies
         run: npm i
@@ -105,8 +110,14 @@ jobs:
       - name: Start Server
         run: php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/serve.log 2>&1 &
 
+      - name: Start ChromeDriver
+        run: |
+          chromedriver --version
+          chromedriver --port=9515 > storage/logs/chromedriver.log 2>&1 &
+
       - name: Run Dusk Tests
         env:
           APP_URL: http://127.0.0.1:8000
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+          DUSK_DRIVER_URL: http://127.0.0.1:9515
         run: php artisan dusk --colors --filter=Avatar
