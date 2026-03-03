@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -15,9 +15,8 @@ export default function AdminUsersCreate({ roles = [] }: { roles: string[] }) {
         name: '',
         email: '',
         password: '',
-        roles: [] as string[],
         email_verified: false,
-        ban: { reason: '', until: '' as string | undefined },
+        roles: [] as string[],
     });
 
     const toggleRole = (role: string, checked: boolean | string) => {
@@ -31,7 +30,14 @@ export default function AdminUsersCreate({ roles = [] }: { roles: string[] }) {
 
     const submit = (e: React.FormEvent) => {
         e.preventDefault();
-        form.submit(store());
+        form.submit(store(), {
+            preserveScroll: true,
+            onSuccess: (page) => {
+                // If the backend redirects to edit route (it does), we're done.
+                // But if not, we can manually redirect using the created user from props.
+                // This is a safe noop because controller already redirects to edit.
+            },
+        });
     };
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -44,7 +50,17 @@ export default function AdminUsersCreate({ roles = [] }: { roles: string[] }) {
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create User" />
             <Wrapper>
-                <Heading title="Create User" description="Create a new user. Optionally mark as verified or set an immediate ban." />
+                <Heading
+                    title="Create User"
+                    description="Create a new user. Optionally mark as verified and assign roles."
+                    action={
+                        <Link href={usersIndex()}>
+                            <Button size="sm" variant="secondary">
+                                Back
+                            </Button>
+                        </Link>
+                    }
+                />
                 <form onSubmit={submit} className="max-w-2xl space-y-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium">Name</label>
@@ -131,39 +147,6 @@ export default function AdminUsersCreate({ roles = [] }: { roles: string[] }) {
                         )}
                     </div>
 
-                    <div className="space-y-2 border-t pt-4">
-                        <label className="text-sm font-medium">
-                            Immediate Ban (optional)
-                        </label>
-                        <div className="space-y-2">
-                            <Input
-                                placeholder="Reason"
-                                value={form.data.ban.reason}
-                                onChange={(e) =>
-                                    form.setData('ban', {
-                                        ...form.data.ban,
-                                        reason: e.target.value,
-                                    })
-                                }
-                            />
-                            <Input
-                                type="datetime-local"
-                                placeholder="Until"
-                                value={form.data.ban.until}
-                                onChange={(e) =>
-                                    form.setData('ban', {
-                                        ...form.data.ban,
-                                        until: e.target.value,
-                                    })
-                                }
-                            />
-                            {(form.errors as any)['ban.reason'] && (
-                                <div className="text-sm text-red-500">
-                                    {(form.errors as any)['ban.reason']}
-                                </div>
-                            )}
-                        </div>
-                    </div>
 
                     <div className="flex justify-end gap-2">
                         <Button type="submit" disabled={form.processing}>

@@ -59,6 +59,8 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import Wrapper from '@/components/wrapper';
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
+import { usePaginationStore } from '@/store/use-pagination-store';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes/admin';
 import {
@@ -101,13 +103,16 @@ export default function AdminUsersIndex({
     roles: string[];
     can: any;
 }) {
+    const { getPerPage, setPerPage } = usePaginationStore();
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/admin/users';
+
     const [localFilters, setLocalFilters] = React.useState({
         search: filters?.search ?? '',
         role: filters?.role ?? '',
         status: filters?.status ?? '',
         email_verified: filters?.email_verified ?? '',
         page: filters?.page ?? 1,
-        per_page: filters?.per_page ?? 25,
+        per_page: filters?.per_page ?? getPerPage(currentPath, 25),
         sort: filters?.sort ?? '',
         direction: filters?.direction ?? 'asc',
     });
@@ -459,14 +464,27 @@ export default function AdminUsersIndex({
         [rowSelection],
     );
 
-    const normalize = (f: typeof localFilters) => ({
-        ...f,
-        status: f.status === 'any' ? '' : f.status,
-        email_verified: f.email_verified === 'any' ? '' : f.email_verified,
-        role: f.role === 'any' ? '' : f.role,
-        sort: f['sort'] || undefined,
-        direction: f['direction'] || undefined,
-    });
+    const normalize = (f: typeof localFilters) => {
+        const serverDefaultPer = 25; // Must match backend default in UserAdminController@index
+        const role = f.role === 'any' ? '' : f.role;
+        const status = f.status === 'any' ? '' : f.status;
+        const email_verified = f.email_verified === 'any' ? '' : f.email_verified;
+        const sort = f.sort || undefined;
+        // Only include direction if a sort is applied and it's not the default 'asc'
+        const direction = sort && f.direction !== 'asc' ? f.direction : undefined;
+        return {
+            search: f.search || undefined,
+            role: role || undefined,
+            status: status || undefined,
+            email_verified: email_verified || undefined,
+            // Only include page when not the default 1
+            page: f.page && f.page !== 1 ? f.page : undefined,
+            // Only include per_page when not equal to the server default (25)
+            per_page: f.per_page && f.per_page !== serverDefaultPer ? f.per_page : undefined,
+            sort,
+            direction,
+        } as Record<string, any>;
+    };
 
     const clearFilter = (
         key: 'search' | 'role' | 'status' | 'email_verified',
@@ -684,13 +702,14 @@ export default function AdminUsersIndex({
                         type="button"
                         variant="secondary"
                         onClick={() => {
+                            const defaultPerPage = getPerPage(currentPath, 25);
                             const reset = {
                                 search: '',
                                 role: '',
                                 status: '',
                                 email_verified: '',
                                 page: 1,
-                                per_page: 25,
+                                per_page: defaultPerPage,
                                 sort: '',
                                 direction: 'asc',
                             } as typeof localFilters;
@@ -709,12 +728,15 @@ export default function AdminUsersIndex({
                     <div>
                         <Select
                             value={String(localFilters.per_page)}
-                            onValueChange={(v) =>
+                            onValueChange={(v) => {
+                                const val = Number(v || 25);
+                                setPerPage(currentPath, val);
                                 setLocalFilters((f) => ({
                                     ...f,
-                                    per_page: Number(v || 25),
+                                    per_page: val,
                                     page: 1,
-                                }))
+                                }));
+                            }
                             }
                         >
                             <SelectTrigger className="h-9 min-w-28">
@@ -917,21 +939,39 @@ export default function AdminUsersIndex({
                             ))}
                         </thead>
                         <tbody>
-                            {table.getRowModel().rows.map((row) => (
-                                <tr key={row.id} className="border-t">
-                                    {row.getVisibleCells().map((cell) => (
-                                        <td
-                                            key={cell.id}
-                                            className="px-3 py-2 text-sm"
-                                        >
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext(),
-                                            )}
-                                        </td>
-                                    ))}
+                            {table.getRowModel().rows.length === 0 ? (
+                                <tr>
+                                    <td colSpan={table.getAllLeafColumns().length} className="p-6">
+                                        <Empty className="border">
+                                            <EmptyHeader>
+                                                <EmptyMedia variant="icon">
+                                                    <Search className="size-5" />
+                                                </EmptyMedia>
+                                                <EmptyTitle>No users found</EmptyTitle>
+                                                <EmptyDescription>
+                                                    Try adjusting your filters or clearing them to see more results.
+                                                </EmptyDescription>
+                                            </EmptyHeader>
+                                        </Empty>
+                                    </td>
                                 </tr>
-                            ))}
+                            ) : (
+                                table.getRowModel().rows.map((row) => (
+                                    <tr key={row.id} className="border-t">
+                                        {row.getVisibleCells().map((cell) => (
+                                            <td
+                                                key={cell.id}
+                                                className="px-3 py-2 text-sm"
+                                            >
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext(),
+                                                )}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>

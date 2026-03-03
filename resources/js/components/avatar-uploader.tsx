@@ -7,6 +7,7 @@ import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileCo
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useInitials } from '@/hooks/use-initials';
+import { toast } from 'sonner';
 
 interface AvatarUploaderProps {
     currentAvatarUrl?: string;
@@ -30,9 +31,14 @@ export function AvatarUploader({
     const { auth } = usePage().props as { auth: Auth };
     const user = auth?.user;
 
-    // Use props or fall back to authenticated user data
-    const avatarUrl =
-        currentAvatarUrl ?? user?.avatar_url ?? user?.avatar ?? undefined;
+    const isAdminMode = Boolean(uploadUrl || deleteUrl);
+
+    // In admin mode, only use the provided user's avatar; never fall back to auth user.
+    // In self mode, fall back to the authenticated user's avatar.
+    const avatarUrl = isAdminMode
+        ? currentAvatarUrl ?? undefined
+        : currentAvatarUrl ?? user?.avatar_url ?? user?.avatar ?? undefined;
+
     const name = userName ?? user?.name ?? 'User';
     const upload_url = uploadUrl ?? ProfileController.uploadAvatar().url;
     const delete_url = deleteUrl ?? ProfileController.deleteAvatar().url;
@@ -81,6 +87,7 @@ export function AvatarUploader({
         const formData = new FormData();
         formData.append('avatar', file);
 
+
         router.post(upload_url, formData, {
             forceFormData: true,
             preserveScroll: true,
@@ -94,8 +101,17 @@ export function AvatarUploader({
                 setProgress(0);
                 setPreview(null);
                 setCacheBuster(Date.now());
-                router.reload({ only: ['auth'] });
-                onUploadComplete?.();
+                if (uploadUrl) {
+                    // Admin mode: let parent decide how to refresh (avoid double reloads)
+                    onUploadComplete?.();
+                } else {
+                    // Self mode: refresh only the authenticated user
+                    // eslint-disable-next-line no-console
+                    console.debug('[AvatarUploader] Self mode: reloading only [auth]');
+                    router.reload({ only: ['auth'] });
+                    toast.success('Avatar updated');
+                    onUploadComplete?.();
+                }
             },
             onError: (errors: Record<string, string>) => {
                 setUploading(false);
@@ -115,14 +131,24 @@ export function AvatarUploader({
     const handleDeleteAvatar = () => {
         setDeleting(true);
 
+
         router.delete(delete_url, {
             preserveScroll: true,
             onSuccess: () => {
                 setDeleting(false);
                 setPreview(null);
                 setCacheBuster(Date.now());
-                router.reload({ only: ['auth'] });
-                onDeleteComplete?.();
+                if (deleteUrl) {
+                    // Admin mode: let parent decide how to refresh (avoid double reloads)
+                    onDeleteComplete?.();
+                } else {
+                    // Self mode: refresh only the authenticated user
+                    // eslint-disable-next-line no-console
+                    console.debug('[AvatarUploader] Self mode: reloading only [auth] (delete)');
+                    router.reload({ only: ['auth'] });
+                    toast.success('Avatar removed');
+                    onDeleteComplete?.();
+                }
             },
             onError: () => {
                 setDeleting(false);
@@ -136,11 +162,12 @@ export function AvatarUploader({
         (avatarUrl
             ? `${avatarUrl}${avatarUrl.includes('?') ? '&' : '?'}v=${cacheBuster}`
             : undefined);
-    const hasAvatar = Boolean(avatarUrl && !preview);
+    const hasAvatar = Boolean((isAdminMode ? currentAvatarUrl : avatarUrl) && !preview);
 
     return (
         <div className="flex items-center gap-4">
             <div
+                data-test="avatar-dropzone"
                 {...getRootProps()}
                 className={`relative cursor-pointer transition-opacity ${
                     uploading || deleting
@@ -148,7 +175,7 @@ export function AvatarUploader({
                         : ''
                 } ${isDragActive ? 'opacity-80' : ''}`}
             >
-                <input {...getInputProps()} />
+                <input {...getInputProps()} data-test="avatar-input" />
                 <Avatar className="h-24 w-24">
                     <AvatarImage
                         src={displayUrl}
@@ -205,11 +232,14 @@ export function AvatarUploader({
                         : 'Click or drag & drop to upload'}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                    JPG, PNG or GIF. Max 5MB.
+                    {isAdminMode
+                        ? 'PNG/JPG up to 5 MB. Changes apply to this user.'
+                        : 'PNG/JPG up to 5 MB.'}
                 </p>
 
                 {hasAvatar && (
                     <Button
+                        data-test="avatar-delete"
                         type="button"
                         variant="destructive"
                         size="sm"

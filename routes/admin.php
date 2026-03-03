@@ -11,7 +11,6 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-
 Route::middleware(['auth', 'verified'])->prefix('admin')->as('admin.')->group(function () {
     Route::post('/impersonate/stop', [ImpersonationController::class, 'stop'])
         ->name('impersonate.stop')
@@ -28,6 +27,11 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->as('admi
     Route::post('users/{user}/unban', [UserAdminController::class, 'unban'])->name('users.unban');
     Route::post('users/{user}/assign-role', [UserAdminController::class, 'assignRole'])->name('users.assign-role');
     Route::post('users/{user}/remove-role', [UserAdminController::class, 'removeRole'])->name('users.remove-role');
+
+    // Avatar management for specific users (admin editing another user)
+    Route::post('users/{user}/avatar', [UserAdminController::class, 'uploadAvatar'])->name('users.avatar.upload');
+    Route::delete('users/{user}/avatar', [UserAdminController::class, 'deleteAvatar'])->name('users.avatar.delete');
+
     Route::post('users/bulk', [UserAdminController::class, 'bulk'])->name('users.bulk');
 
     Route::post('users/{user}/impersonate', [ImpersonationController::class, 'start'])->name('users.impersonate');

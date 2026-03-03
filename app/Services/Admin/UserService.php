@@ -80,11 +80,6 @@ class UserService
             $user->syncRoles($data['roles']);
         }
 
-        // Optional immediate ban on create
-        if (! empty($data['ban']) && ! empty($data['ban']['reason'])) {
-            $this->ban($user, $data['ban']['reason'], $data['ban']['until'] ?? null);
-        }
-
         return $user->fresh(['roles']);
     }
 
@@ -104,15 +99,6 @@ class UserService
 
         if (array_key_exists('roles', $data)) {
             $user->syncRoles($data['roles'] ?? []);
-        }
-
-        // Optional immediate ban/unban on update
-        if (! empty($data['ban']) && ! empty($data['ban']['reason'])) {
-            $this->ban($user, $data['ban']['reason'], $data['ban']['until'] ?? null);
-        }
-
-        if (array_key_exists('unban', $data) && $data['unban']) {
-            $this->unban($user);
         }
 
         return $user->fresh(['roles']);

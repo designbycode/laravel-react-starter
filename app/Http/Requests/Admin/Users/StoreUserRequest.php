@@ -28,8 +28,6 @@ class StoreUserRequest extends FormRequest
             'roles' => ['sometimes', 'array'],
             'roles.*' => ['string', 'exists:roles,name'],
             'email_verified' => ['sometimes', 'boolean'],
-            'ban.reason' => ['sometimes', 'required_with:ban.until', 'string', 'max:2000'],
-            'ban.until' => ['sometimes', 'nullable', 'date'],
         ];
     }
 }

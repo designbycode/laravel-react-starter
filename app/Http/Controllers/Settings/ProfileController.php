@@ -61,7 +61,7 @@ class ProfileController extends Controller
     /**
      * Upload the user's avatar.
      */
-    public function uploadAvatar(Request $request): RedirectResponse
+    public function uploadAvatar(Request $request)
     {
         $request->validate([
             'avatar' => ['required', 'image', 'max:5120'], // 5MB max
@@ -69,26 +69,20 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        // Delete existing avatar if present
         $user->clearMediaCollection('avatar');
+        $user->addMediaFromRequest('avatar')->toMediaCollection('avatar');
 
-        // Add the new avatar to the media library
-        $user->addMediaFromRequest('avatar')
-            ->toMediaCollection('avatar');
-
-        return back();
+        return response()->noContent();
     }
 
     /**
      * Delete the user's avatar.
      */
-    public function deleteAvatar(Request $request): RedirectResponse
+    public function deleteAvatar(Request $request)
     {
         $user = $request->user();
-
-        // Delete the avatar
         $user->clearMediaCollection('avatar');
 
-        return back();
+        return response()->noContent();
     }
 }

@@ -14,7 +14,7 @@ it('exposes avatar_url in Inertia auth props after upload', function (): void {
     $file = UploadedFile::fake()->image('avatar.jpg', 300, 300);
     $this->post(route('profile.avatar.upload'), [
         'avatar' => $file,
-    ])->assertRedirect();
+    ])->assertNoContent();
 
     // Visit profile edit page and assert Inertia has avatar_url
     $response = $this->get(route('profile.edit'));

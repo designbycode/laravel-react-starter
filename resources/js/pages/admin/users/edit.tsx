@@ -1,8 +1,9 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import type { BreadcrumbItem } from '@/types';
 import { dashboard } from '@/routes/admin';
 import { index as usersIndex, update } from '@/routes/admin/users';
+import avatarRoutes from '@/routes/admin/users/avatar';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -73,8 +74,21 @@ export default function AdminUsersEdit({
                             Avatar
                         </label>
                         <AvatarUploader
-                            currentAvatarUrl={user.avatar_url || user.avatar}
+                            currentAvatarUrl={user.avatar_url ?? user.avatar ?? undefined}
                             userName={user.name}
+                            uploadUrl={avatarRoutes.upload({ user: user.uuid }).url}
+                            deleteUrl={avatarRoutes.delete({ user: user.uuid }).url}
+                            onUploadComplete={() => {
+                                router.reload({ only: ['user'] });
+                                toast.success('Avatar updated');
+                            }}
+                            onUploadError={(msg) => {
+                                toast.error(msg || 'Failed to upload avatar');
+                            }}
+                            onDeleteComplete={() => {
+                                router.reload({ only: ['user'] });
+                                toast.success('Avatar removed');
+                            }}
                         />
                     </div>
 

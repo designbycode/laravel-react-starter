@@ -54,3 +54,59 @@ jobs:
 
       - name: Tests
         run: ./vendor/bin/pest
+
+  dusk:
+    runs-on: ubuntu-latest
+    needs: ci
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install Node Dependencies
+        run: npm i
+
+      - name: Install Dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy Environment File
+        run: cp .env.example .env
+
+      - name: Generate Application Key
+        run: php artisan key:generate
+
+      - name: Prepare SQLite Database
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+          echo "DB_CONNECTION=sqlite" >> .env
+          echo "DB_DATABASE=database/database.sqlite" >> .env
+          echo "APP_URL=http://127.0.0.1:8000" >> .env
+
+      - name: Build Assets
+        run: npm run build
+
+      - name: Migrate
+        run: php artisan migrate --no-interaction -v
+
+      - name: Start Server
+        run: php artisan serve --host=127.0.0.1 --port=8000 > storage/logs/serve.log 2>&1 &
+
+      - name: Run Dusk Tests
+        env:
+          APP_URL: http://127.0.0.1:8000
+          CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
+        run: php artisan dusk --colors --filter=Avatar

@@ -162,6 +162,30 @@ class UserAdminController extends Controller
         return back()->with('success', 'Role removed');
     }
 
+    public function uploadAvatar(\Illuminate\Http\Request $request, User $user)
+    {
+   
+        $this->authorize('update', $user);
+
+        $validated = $request->validate([
+            'avatar' => ['required', 'image', 'max:5120'],
+        ]);
+
+        $user->clearMediaCollection('avatar');
+        $user->addMediaFromRequest('avatar')->toMediaCollection('avatar');
+
+        return response()->noContent();
+    }
+
+    public function deleteAvatar(\Illuminate\Http\Request $request, User $user)
+    {
+        $this->authorize('update', $user);
+
+        $user->clearMediaCollection('avatar');
+
+        return response()->noContent();
+    }
+
     public function bulk(BulkActionRequest $request)
     {
         $this->authorize('bulk', User::class);
