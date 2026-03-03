@@ -174,7 +174,9 @@ class UserAdminController extends Controller
         $user->clearMediaCollection('avatar');
         $user->addMediaFromRequest('avatar')->toMediaCollection('avatar');
 
-        return response()->noContent();
+        return response()->json([
+            'avatar_url' => $user->getFirstMediaUrl('avatar') ?: null,
+        ]);
     }
 
     public function deleteAvatar(\Illuminate\Http\Request $request, User $user)
@@ -183,7 +185,9 @@ class UserAdminController extends Controller
 
         $user->clearMediaCollection('avatar');
 
-        return response()->noContent();
+        return response()->json([
+            'avatar_url' => null,
+        ]);
     }
 
     public function bulk(BulkActionRequest $request)

@@ -72,7 +72,9 @@ class ProfileController extends Controller
         $user->clearMediaCollection('avatar');
         $user->addMediaFromRequest('avatar')->toMediaCollection('avatar');
 
-        return response()->noContent();
+        return response()->json([
+            'avatar_url' => $user->getFirstMediaUrl('avatar') ?: null,
+        ]);
     }
 
     /**
@@ -83,6 +85,8 @@ class ProfileController extends Controller
         $user = $request->user();
         $user->clearMediaCollection('avatar');
 
-        return response()->noContent();
+        return response()->json([
+            'avatar_url' => null,
+        ]);
     }
 }

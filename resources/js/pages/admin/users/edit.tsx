@@ -79,7 +79,7 @@ export default function AdminUsersEdit({
                             uploadUrl={avatarRoutes.upload({ user: user.uuid }).url}
                             deleteUrl={avatarRoutes.delete({ user: user.uuid }).url}
                             onUploadComplete={() => {
-                                router.reload({ only: ['user'] });
+                                router.get(window.location.pathname, {}, { only: ['user'], preserveScroll: true, preserveState: true, replace: true });
                                 toast.success('Avatar updated');
                             }}
                             onUploadError={(msg) => {

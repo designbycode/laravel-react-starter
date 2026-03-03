@@ -43,6 +43,7 @@ export function AvatarUploader({
     const upload_url = uploadUrl ?? ProfileController.uploadAvatar().url;
     const delete_url = deleteUrl ?? ProfileController.deleteAvatar().url;
     const [preview, setPreview] = useState<string | null>(null);
+    const [serverAvatarUrl, setServerAvatarUrl] = useState<string | null>(null);
     const [uploading, setUploading] = useState<boolean>(false);
     const [deleting, setDeleting] = useState<boolean>(false);
     const [progress, setProgress] = useState<number>(0);
@@ -80,88 +81,103 @@ export function AvatarUploader({
         disabled: uploading || deleting,
     });
 
-    const uploadFile = (file: File) => {
+    const uploadFile = async (file: File) => {
         setUploading(true);
         setProgress(0);
 
         const formData = new FormData();
         formData.append('avatar', file);
 
-
-        router.post(upload_url, formData, {
-            forceFormData: true,
-            preserveScroll: true,
-            onProgress: (progressEvent) => {
-                if (progressEvent?.percentage) {
-                    setProgress(Math.round(progressEvent.percentage));
-                }
+        // Use fetch to receive JSON with avatar_url for immediate UI update
+        const csrf = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.content;
+        fetch(upload_url, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
             },
-            onSuccess: () => {
+            body: formData,
+            credentials: 'same-origin',
+        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data?.message || 'Failed to upload avatar');
+                }
+                return res.json();
+            })
+            .then((data: any) => {
+            // Note: progress handled by dropzone UX; fetch doesn't provide percent easily
+            
                 setUploading(false);
                 setProgress(0);
                 setPreview(null);
+                const nextUrl: string | null = data?.avatar_url || null;
+                setServerAvatarUrl(nextUrl);
                 setCacheBuster(Date.now());
                 if (uploadUrl) {
-                    // Admin mode: let parent decide how to refresh (avoid double reloads)
+                    // Admin mode: parent can optionally partial-reload the edited user
                     onUploadComplete?.();
                 } else {
-                    // Self mode: refresh only the authenticated user
-                    // eslint-disable-next-line no-console
-                    console.debug('[AvatarUploader] Self mode: reloading only [auth]');
-                    router.reload({ only: ['auth'] });
+                    // Self mode: show success and optionally refresh auth in background
                     toast.success('Avatar updated');
+                    router.reload({ only: ['auth'] });
                     onUploadComplete?.();
                 }
-            },
-            onError: (errors: Record<string, string>) => {
+            })
+            .catch((e: any) => {
                 setUploading(false);
                 setProgress(0);
                 setPreview(null);
-                const errorMessage =
-                    errors?.avatar ?? 'Failed to upload avatar';
-                onUploadError?.(errorMessage);
-            },
-        });
+                onUploadError?.(e?.message || 'Failed to upload avatar');
+            });
     };
 
     const handleRemovePreview = () => {
         setPreview(null);
     };
 
-    const handleDeleteAvatar = () => {
+    const handleDeleteAvatar = async () => {
         setDeleting(true);
-
-
-        router.delete(delete_url, {
-            preserveScroll: true,
-            onSuccess: () => {
+        const csrf = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement | null)?.content;
+        fetch(delete_url, {
+            method: 'DELETE',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                ...(csrf ? { 'X-CSRF-TOKEN': csrf } : {}),
+            },
+            credentials: 'same-origin',
+        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data?.message || 'Failed to delete avatar');
+                }
+                return res.json();
+            })
+            .then((data: any) => {
                 setDeleting(false);
                 setPreview(null);
+                setServerAvatarUrl(null);
                 setCacheBuster(Date.now());
                 if (deleteUrl) {
-                    // Admin mode: let parent decide how to refresh (avoid double reloads)
                     onDeleteComplete?.();
                 } else {
-                    // Self mode: refresh only the authenticated user
-                    // eslint-disable-next-line no-console
-                    console.debug('[AvatarUploader] Self mode: reloading only [auth] (delete)');
-                    router.reload({ only: ['auth'] });
                     toast.success('Avatar removed');
+                    router.reload({ only: ['auth'] });
                     onDeleteComplete?.();
                 }
-            },
-            onError: () => {
+            })
+            .catch((e: any) => {
                 setDeleting(false);
-                onUploadError?.('Failed to delete avatar');
-            },
-        });
+                onUploadError?.(e?.message || 'Failed to delete avatar');
+            });
     };
 
-    const displayUrl =
-        preview ??
-        (avatarUrl
-            ? `${avatarUrl}${avatarUrl.includes('?') ? '&' : '?'}v=${cacheBuster}`
-            : undefined);
+    const effectiveUrl = serverAvatarUrl ?? avatarUrl ?? undefined;
+    const displayUrl = preview ?? (effectiveUrl ? `${effectiveUrl}${effectiveUrl.includes('?') ? '&' : '?'}v=${cacheBuster}` : undefined);
     const hasAvatar = Boolean((isAdminMode ? currentAvatarUrl : avatarUrl) && !preview);
 
     return (
