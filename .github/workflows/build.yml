@@ -1,0 +1,33 @@
+name: Build (Bun)
+
+on:
+  push:
+    branches: [ main, develop, master ]
+  pull_request:
+
+jobs:
+  bun-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build assets
+        run: bun run build
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bun-build-artifacts
+          path: |
+            public/build
+            public/build/manifest.json
