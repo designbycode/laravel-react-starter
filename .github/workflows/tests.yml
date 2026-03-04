@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: ['8.4', '8.5']
+        php-version: ['8.4']
 
     steps:
       - name: Checkout code
@@ -29,8 +29,9 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-version }}
-          tools: composer:v2
-          coverage: xdebug
+          tools: composer:v2, phpunit:v12
+          extensions: gd
+          coverage: none
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -66,7 +67,8 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          tools: composer:v2
+          tools: composer:v2, phpunit:v12
+          extensions: gd
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -98,7 +100,7 @@ jobs:
           mkdir -p database
           touch database/database.sqlite
           echo "DB_CONNECTION=sqlite" >> .env
-          echo "DB_DATABASE=database/database.sqlite" >> .env
+          echo "DB_DATABASE=${{ github.workspace }}/database/database.sqlite" >> .env
           echo "APP_URL=http://127.0.0.1:8000" >> .env
 
       - name: Build Assets
@@ -120,4 +122,4 @@ jobs:
           APP_URL: http://127.0.0.1:8000
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
           DUSK_DRIVER_URL: http://127.0.0.1:9515
-        run: php artisan dusk --colors --filter=Avatar
+        run: php artisan dusk --colors

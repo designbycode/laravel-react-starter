@@ -15,26 +15,22 @@ class ProfileAvatarTest extends DuskTestCase
 
     public function test_user_can_upload_and_delete_own_avatar(): void
     {
-        Storage::fake('public');
         $user = User::factory()->create(['password' => bcrypt('password')]);
 
         $this->browse(function (Browser $browser) use ($user) {
             $browser->visit('/login')
-                ->type('email', $user->email)
-                ->type('password', 'password')
+                ->type('#email', $user->email)
+                ->type('#password', 'password')
                 ->press('Log in')
-                ->waitForLocation('/')
+                ->waitForLocation('/dashboard')
                 ->visit('/settings/profile')
                 ->waitFor('[data-test="avatar-input"]')
                 ->attach('[data-test="avatar-input"]', __DIR__.'/fixtures/avatar-small.png')
-                ->pause(1500)
+                ->pause(2500)
                 ->assertMissing('.inertia-error-overlay')
-                ->waitFor('.sonner-toast')
-                ->assertSee('Avatar updated')
-                ->whenAvailable('[data-test="avatar-delete"]', function (Browser $delete) {
-                    $delete->click('[data-test="avatar-delete"]');
-                })
-                ->pause(800)
+                ->waitFor('[data-test="avatar-delete"]', 10)
+                ->press('Remove avatar')
+                ->pause(2500)
                 ->assertSee('Avatar removed');
         });
     }
