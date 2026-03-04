@@ -28,7 +28,7 @@ it('allows admin to upload avatar for another user', function () {
         ->post(route('admin.users.avatar.upload', $target), [
             'avatar' => $file,
         ])
-        ->assertNoContent();
+        ->assertOk();
 
     $target->refresh();
     expect($target->getFirstMedia('avatar'))->not()->toBeNull();
@@ -60,13 +60,13 @@ it('allows admin to delete avatar for another user', function () {
     $this->actingAs($admin)
         ->post(route('admin.users.avatar.upload', $target), [
             'avatar' => $file,
-        ])->assertNoContent();
+        ])->assertOk();
 
     expect($target->fresh()->getFirstMedia('avatar'))->not()->toBeNull();
 
     $this->actingAs($admin)
         ->delete(route('admin.users.avatar.delete', $target))
-        ->assertNoContent();
+        ->assertOk();
 
     expect($target->fresh()->getFirstMedia('avatar'))->toBeNull();
 });

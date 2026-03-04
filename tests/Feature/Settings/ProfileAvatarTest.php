@@ -13,7 +13,7 @@ it('allows authenticated user to upload their own avatar', function () {
         ->post(route('profile.avatar.upload'), [
             'avatar' => UploadedFile::fake()->image('me.jpg', 200, 200),
         ])
-        ->assertNoContent();
+        ->assertOk();
 
     expect($user->fresh()->getFirstMedia('avatar'))->not()->toBeNull();
 });
@@ -27,13 +27,13 @@ it('allows authenticated user to delete their avatar', function () {
     $this->actingAs($user)
         ->post(route('profile.avatar.upload'), [
             'avatar' => UploadedFile::fake()->image('me.jpg', 200, 200),
-        ])->assertNoContent();
+        ])->assertOk();
 
     expect($user->fresh()->getFirstMedia('avatar'))->not()->toBeNull();
 
     $this->actingAs($user)
         ->delete(route('profile.avatar.delete'))
-        ->assertNoContent();
+        ->assertOk();
 
     expect($user->fresh()->getFirstMedia('avatar'))->toBeNull();
 });

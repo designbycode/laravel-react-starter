@@ -17,7 +17,7 @@ it('uploads an avatar for the authenticated user', function (): void {
         'avatar' => $file,
     ]);
 
-    $response->assertNoContent();
+    $response->assertOk();
 
     $user->refresh();
 
@@ -41,7 +41,7 @@ it('deletes an existing avatar for the authenticated user', function (): void {
 
     $this->post(route('profile.avatar.upload'), [
         'avatar' => $file,
-    ])->assertNoContent();
+    ])->assertOk();
 
     $user->refresh();
 
@@ -52,7 +52,7 @@ it('deletes an existing avatar for the authenticated user', function (): void {
     // Now delete the avatar
     $response = $this->delete(route('profile.avatar.delete'));
 
-    $response->assertNoContent();
+    $response->assertOk();
 
     $user->refresh();
 
