@@ -27,6 +27,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 import { usePermissions } from '@/hooks/use-permissions';
 import { dashboard } from '@/routes';
+import { dashboard as adminDashboard } from '@/routes/admin';
+import { index as adminUsersIndex } from '@/routes/admin/users';
+import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
 import {
     DropdownMenu,
@@ -59,10 +62,29 @@ const footerNavItems: NavItem[] = [
 ];
 
 export function AppSidebar() {
-    const { isAdmin, hasAnyRole } = usePermissions();
+    const { isAdmin } = usePermissions();
     const { state } = useSidebar();
     const isMobile = useIsMobile();
-    const canAccessAdmin = isAdmin() || hasAnyRole(['admin', 'moderator']);
+    const { currentUrl } = useCurrentUrl();
+    const inAdminSection = currentUrl.startsWith('/admin');
+    const canAccessAdmin = isAdmin();
+
+    const navItems =
+        inAdminSection && canAccessAdmin
+            ? [
+                  {
+                      title: 'Dashboard',
+                      href: adminDashboard(),
+                      icon: Gauge,
+                  },
+                  {
+                      title: 'Users',
+                      href: adminUsersIndex(),
+                      icon: Users,
+                  },
+              ]
+            : mainNavItemsBase;
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -102,18 +124,20 @@ export function AppSidebar() {
                                                 className="gap-2"
                                             >
                                                 <User className="size-4" />
-                                                <span>User</span>
+                                                <span>User Dashboard</span>
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem asChild>
                                             <Link
                                                 prefetch
-                                                href="/admin/dashboard"
+                                                href={adminDashboard()}
                                                 className="gap-2"
                                             >
                                                 <Shield className="size-4" />
-                                                <span>Administrator</span>
+                                                <span>
+                                                    Administrator Dashboard
+                                                </span>
                                             </Link>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -131,24 +155,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain
-                    items={
-                        canAccessAdmin
-                            ? [
-                                  {
-                                      title: 'Dashboard',
-                                      href: '/admin/dashboard',
-                                      icon: Gauge,
-                                  },
-                                  {
-                                      title: 'Users',
-                                      href: '/admin/users',
-                                      icon: Users,
-                                  },
-                              ]
-                            : mainNavItemsBase
-                    }
-                />
+                <NavMain items={navItems} />
             </SidebarContent>
 
             <SidebarFooter>
